@@ -1,0 +1,193 @@
+name: Publish
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  # Disable the .NET logo in the console output.
+  DOTNET_NOLOGO: true
+  # Disable the .NET first time experience to skip caching NuGet packages and speed up the build.
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  # Disable sending .NET CLI telemetry to Microsoft.
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  # Module Namespace
+  MODULE_NAMESPACE: "Bannerlord.FluidCombatNext"
+  # Module Name
+  MODULE_NAME: "FluidCombatNext"
+  # Module Display Name
+  MODULE_DISPLAY_NAME: "Fluid Combat Next"
+  # Game Directory for build
+  BANNERLORD_GAME_DIR: "./bannerlord"
+
+jobs:
+  build-module:
+    name: Build Module
+    runs-on: ubuntu-latest
+    outputs:
+      mod_version: ${{ steps.changelog.outputs.mod_version }}
+      mod_description: ${{ steps.changelog.outputs.mod_description }}
+      mod_namespace: ${{ steps.buildmodule.outputs.mod_namespace }}     
+      mod_name: ${{ steps.buildmodule.outputs.mod_name }}      
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@master
+      with:
+        dotnet-version: 6.0.x
+
+    - name: Build Module
+      id: buildmodule
+      run: |
+        $namespace = "$env:MODULE_NAMESPACE"
+        $modname = "$env:MODULE_NAME"
+
+        # Code to build
+        $proj = "src/$namespace.sln";
+
+        # Output Path for build
+        $path = "$env:BANNERLORD_GAME_DIR";
+        # Folder needs to be created or Bannerlord.BuildResources complains
+        New-Item -ItemType directory -Force -Path $path;       
+
+        # Path Required for Module
+        $moduleOutputPath = "/Modules/$namespace/bin/Win64_Shipping_Client/";           
+
+        # Directory to store each version's output
+        $impl = "./versions";
+
+        $latestOutput = "$impl/latest/$moduleOutputPath";
+        $oldestOutput = "$impl/oldest/$moduleOutputPath";
+        New-Item -ItemType directory -Force -Path $latestOutput;
+        New-Item -ItemType directory -Force -Path $oldestOutput;
+
+        # Process all implementations - assuming the last version in the file is the most stable
+        [string[]]$gameversions = Get-Content -Path supported-game-versions.txt;
+
+        For ($i = 0; $i -le $gameversions.Length - 1; $i++)
+        {
+            $gameversion = $gameversions[$i];
+            $gameversion = $gameversion.replace("v", "")    
+
+            echo "::group::Build for $gameversion"
+            echo "Start building for gameversion = $gameversion"
+
+            # Create Version directory
+            $versionOutput = "$impl/$gameversion/$moduleOutputPath";
+            $versionBaseDirectory = "$impl/$gameversion/Modules/$namespace"
+            New-Item -ItemType directory -Force -Path $versionOutput;
+
+            # Bannerlord.BuildResources sets the output to GameFolder property
+            dotnet clean $proj --configuration Release;
+            dotnet build $proj --configuration Release -p:OverrideGameVersion=$gameversion -p:GameVersion=$gameversion -p:GameFolder="$path" --output "$versionOutput";                    
+
+            #Copy submodule
+            Copy-Item "src/_Module/SubModule.xml" "$versionBaseDirectory";
+
+            if ($i -eq 0)
+            {
+                echo "Copying Latest version"
+
+                # Copy Output files to the Implementations folder
+                Copy-Item "$versionOutput/*" $latestOutput;
+            }
+            elseif ($i -eq $gameversions.Length - 1)
+            {
+                echo "Copying Oldest version"
+
+                Copy-Item "$versionOutput/*" $oldestOutput;
+            }
+
+            echo "Build complete"
+            echo "::endgroup::"
+
+            # Write outputs for other jobs
+            echo "mod_namespace=$namespace" >> $env:GITHUB_OUTPUT
+            echo "mod_name=$modname" >> $env:GITHUB_OUTPUT            
+        }
+        
+      shell: pwsh
+
+    - name: Install and Run ChangelogParser
+      id: changelog
+      run: |
+        dotnet tool install -g Bannerlord.ChangelogParser
+
+        # Parse Latest version
+        vers="$(bannerlord_changelog_parser latestversion -f "$PWD/changelog.txt")"
+
+        #Set output variable for latest version
+        #echo "::set-output name=mod_version::$vers"
+        echo "mod_version=$vers" >> $env:GITHUB_OUTPUT
+
+        # Parse Description
+        desc="$(bannerlord_changelog_parser fulldescription -f "$PWD/changelog.txt")"
+        desc="${desc//'%'/'%25'}"
+        desc="${desc//$'"'/'%22'}"
+        desc="${desc//$'\n'/'%0A'}"
+        desc="${desc//$'\r'/'%0D'}"
+
+        #Set output variable for description
+        #echo "::set-output name=mod_description::$desc"
+        echo "mod_description=$desc" >> $env:GITHUB_OUTPUT
+
+    - name: Upload Modules folder
+      uses: actions/upload-artifact@v3
+      with:
+        name: all
+        path: ./versions/
+
+    - name: Upload Modules folder
+      uses: actions/upload-artifact@v3
+      with:
+        name: latest
+        path: ./versions/latest/
+
+###########################
+#         GITHUB          #
+###########################
+  publish-on-github:
+    needs: ["build-module"]
+    uses: BUTR/workflows/.github/workflows/release-github.yml@master
+    with:
+      mod_id: ${{ needs.build-module.outputs.mod_namespace }}
+      mod_version: ${{ needs.build-module.outputs.mod_version }}
+      mod_description: ${{ needs.build-module.outputs.mod_description }}
+      artifact_name: all
+
+###########################
+#          STEAM          #
+###########################
+  publish-on-steam:
+    needs: ["build-module"]
+    uses: BUTR/workflows/.github/workflows/release-steam.yml@master
+    with:
+      workshop_id: 2954311115
+      mod_id: ${{ needs.build-module.outputs.mod_namespace }}
+      mod_description: ${{ needs.build-module.outputs.mod_description }}
+      artifact_name: "latest"
+    secrets:
+      STEAM_LOGIN: ${{ secrets.STEAM_WORKSHOP_LOGIN }}
+      STEAM_PASSWORD: ${{ secrets.STEAM_WORKSHOP_PASSWORD }}
+      STEAM_AUTH_CODE: ${{ secrets.STEAM_WORKSHOP_AUTH_CODE }}
+
+############################
+##        NEXUSMODS        #
+############################
+#  publish-on-nexusmods:
+#    needs: ["build-module"]
+#    uses: BUTR/workflows/.github/workflows/release-nexusmods.yml@master
+#    with:
+#      nexusmods_game_id: mountandblade2bannerlord
+#      nexusmods_mod_id: 9999
+#      mod_filename: ${{ env.MODULE_NAME }}
+#      mod_version: ${{ needs.build-module.outputs.mod_version }}
+#      mod_description: ${{ needs.build-module.outputs.mod_description }}
+#      artifact_name: ${{ env.MODULE_NAMESPACE }}
+#    secrets:
+#      NEXUSMODS_APIKEY: ${{ secrets.NEXUSMODS_APIKEY }}
+#      NEXUSMODS_COOKIES: ${{ secrets.NEXUSMODS_COOKIES }}
+

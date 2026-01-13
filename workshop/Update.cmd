@@ -1,0 +1,2 @@
+"G:\SteamLibrary\steamapps\common\Mount & Blade II Bannerlord\bin\Win64_Shipping_Client\TaleWorlds.MountAndBlade.SteamWorkshop.exe" "X:\repos\Bannerlord.FluidCombatNext\workshop\WorkshopUpdate.xml"
+pause

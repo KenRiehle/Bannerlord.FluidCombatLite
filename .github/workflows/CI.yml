@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches-ignore:
+      - master
+  pull_request:
+    branches:
+      - master
+      - dev
+    # hopefully will be triggered more often
+    types: [assigned, opened, edited, reopened, review_requested, ready_for_review]
+  workflow_dispatch:
+
+env:
+  # Disable the .NET logo in the console output.
+  DOTNET_NOLOGO: true
+  # Disable the .NET first time experience to skip caching NuGet packages and speed up the build.
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  # Disable sending .NET CLI telemetry to Microsoft.
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+   # Module Namespace
+  MODULE_NAMESPACE: "Bannerlord.FluidCombatNext"
+  # Module Name
+  MODULE_NAME: "FluidCombatNext"
+  # Module Display Name
+  MODULE_DISPLAY_NAME: "Fluid Combat Next"
+
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3.1.0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@master
+      with:
+        dotnet-version: 6.0.x
+
+    - name: Build Module
+      run: |    
+        [string[]]$gameversions = Get-Content -Path supported-game-versions.txt;
+
+        $proj = 'src/${{ env.MODULE_NAMESPACE }}.csproj';
+        $path = $PWD.Path + '/bannerlord';
+
+        # Process all implementations
+        For ($i = 0; $i -le $gameversions.Length - 1; $i++)
+        {
+            $gameversion = $gameversions[$i];
+            $gameversion = $gameversion.replace("v", "")            
+
+            echo "::group::Build for $gameversion"
+            echo "Start building for gameversion = $gameversion"
+
+            dotnet clean $proj --configuration Release;
+            dotnet build $proj --configuration Release -p:GameVersion=$gameversion -p:GameFolder="$path";
+            
+            echo "::endgroup::"
+        }        
+      shell: pwsh

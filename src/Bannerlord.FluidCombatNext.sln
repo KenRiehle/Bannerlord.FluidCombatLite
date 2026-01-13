@@ -1,0 +1,53 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.1.11312.151
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bannerlord.FluidCombatNext", "Bannerlord.FluidCombatNext.csproj", "{0BDD779D-74E3-4E54-B8E1-5C3C844156B7}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{A36C11F7-2C56-424B-A18B-67E6BA96E313}"
+	ProjectSection(SolutionItems) = preProject
+		..\.github\dependabot.yml = ..\.github\dependabot.yml
+		..\README.md = ..\README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "other", "other", "{A917294D-1F17-4E54-8E2C-F4A3AB86802E}"
+	ProjectSection(SolutionItems) = preProject
+		..\changelog.txt = ..\changelog.txt
+		..\README.md = ..\README.md
+		..\supported-game-versions.txt = ..\supported-game-versions.txt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{A7E11D7B-C6FE-44A3-B660-26FC92B62DD2}"
+	ProjectSection(SolutionItems) = preProject
+		..\.github\workflows\CI.yml = ..\.github\workflows\CI.yml
+		..\.github\workflows\Publish.yml = ..\.github\workflows\Publish.yml
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0BDD779D-74E3-4E54-B8E1-5C3C844156B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0BDD779D-74E3-4E54-B8E1-5C3C844156B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0BDD779D-74E3-4E54-B8E1-5C3C844156B7}.Debug|x64.ActiveCfg = Debug|x64
+		{0BDD779D-74E3-4E54-B8E1-5C3C844156B7}.Debug|x64.Build.0 = Debug|x64
+		{0BDD779D-74E3-4E54-B8E1-5C3C844156B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0BDD779D-74E3-4E54-B8E1-5C3C844156B7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0BDD779D-74E3-4E54-B8E1-5C3C844156B7}.Release|x64.ActiveCfg = Release|x64
+		{0BDD779D-74E3-4E54-B8E1-5C3C844156B7}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A7E11D7B-C6FE-44A3-B660-26FC92B62DD2} = {A36C11F7-2C56-424B-A18B-67E6BA96E313}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D20C8599-B866-4932-BDFA-4D1C84430948}
+	EndGlobalSection
+EndGlobal
