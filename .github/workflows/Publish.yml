@@ -135,13 +135,13 @@ jobs:
         echo "mod_description=$desc" >> $env:GITHUB_OUTPUT
 
     - name: Upload Modules folder
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v6
       with:
         name: all
         path: ./versions/
 
     - name: Upload Modules folder
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v6
       with:
         name: latest
         path: ./versions/latest/
